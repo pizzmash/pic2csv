@@ -22,7 +22,6 @@ def recognize_captcha(api_key, images):
             }]
         })
 
-    print('begin request')
     obj_response = requests.post(
         str_url,
         data=json.dumps({"requests": img_requests}).encode(),
@@ -30,7 +29,6 @@ def recognize_captcha(api_key, images):
         headers=str_headers
     )
 
-    print('end request')
     try:
         obj_response.raise_for_status()
     except Exception as e:

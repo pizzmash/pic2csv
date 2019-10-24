@@ -10,6 +10,7 @@ import requests
 import pathlib
 import imghdr
 import settings
+import os
 
 
 def search_images(directories):
@@ -35,9 +36,13 @@ def read_source(source):
             f.file.seek(0)
             image = cv2.imread(f.name, cv2.IMREAD_COLOR)
     else:
-        image = cv2.imread(source, cv2.IMREAD_COLOR)
+        if not os.path.exists(source):
+            print('ERROR: file does not exist')
+            return None
+        else:
+            image = cv2.imread(source, cv2.IMREAD_COLOR)
     if image is None:
-        print('ERROR: Failed to read image')
+        print('ERROR: failed to read image')
         return None
     else:
         return image
