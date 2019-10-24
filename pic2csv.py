@@ -21,6 +21,27 @@ def search_images(directories):
     return images
 
 
+def read_source(source):
+    # check if the file on the web
+    if len(parse.urlparse(source).scheme) > 0:
+        try:
+            res = requests.get(source)
+        except requests.exceptions.RequestException as e:
+            print('ERROR: {}'.format(e))
+            return None
+        with tempfile.NamedTemporaryFile(dir='./') as f:
+            f.write(res.content)
+            f.file.seek(0)
+            image = cv2.imread(f.name, cv2.IMREAD_COLOR)
+    else:
+        image = cv2.imread(source, cv2.IMREAD_COLOR)
+    if image is None:
+        print('ERROR: failed to read image')
+        return None
+    else:
+        return image
+
+
 def write_csv(sources):
     page_fields = ['source', 'page_id', 'frames']
     frame_fields = ['source', 'page_id', 'frame_id', 'startX', 'startY', 'width', 'height', 'text']
@@ -34,24 +55,10 @@ def write_csv(sources):
     for i, source in enumerate(sources):
         print('({}/{}) file: {}'.format(i+1, len(sources), source))
         is_error = False
-        image = None
-        # check if the file on the web
-        if len(parse.urlparse(source).scheme) > 0:
-            res = None
-            try:
-                res = requests.get(source)
-            except requests.exceptions.RequestException as e:
-                print('error: {}'.format(e))
-            if res is not None:
-                with tempfile.NamedTemporaryFile(dir='./') as f:
-                    f.write(res.content)
-                    f.file.seek(0)
-                    image = cv2.imread(f.name, cv2.IMREAD_COLOR)
-        else:
-            image = cv2.imread(source, cv2.IMREAD_COLOR)
+        
+        image = read_source(source)
 
         if image is None:
-            print('error: failed to read image')
             is_error = True
         else:
             r = recognize_captcha(settings.AP, [image])
