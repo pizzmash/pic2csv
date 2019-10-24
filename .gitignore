@@ -1,0 +1,6 @@
+*.jpeg
+*.csv
+__pycache__
+*.pickle
+.DS_Store
+.env
