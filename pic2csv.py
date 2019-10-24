@@ -79,7 +79,7 @@ def pack_frame_info(source, page_id, frame_id, frame):
 
 
 def pack_error_info(source, page_id):
-    return {'source': source, 'page_id':page_id}
+    return {'source': source, 'page_id': page_id}
 
 
 def make_csv(sources):
@@ -95,7 +95,6 @@ def make_csv(sources):
     frames_csv.writeheader()
     errors_csv = csv.DictWriter(errors_fp, fieldnames=error_fields)
     errors_csv.writeheader()
-
 
     for i, source in enumerate(sources):
         print('({}/{}) FILE: {}'.format(i+1, len(sources), source))
