@@ -37,25 +37,37 @@ def recognize_captcha(api_key, images):
     return obj_response.text
 
 
+def check_legality(vertices):
+    for v in vertices:
+        if "x" not in v or "y" not in v:
+            return False
+        elif v["x"] < 0 or v["y"] < 0:
+            return False
+    return True
+
+
 def parse_response(response):
     frames = []
-    for page in response["fullTextAnnotation"]["pages"]:
-        for block in page["blocks"]:
-            vertices = block["boundingBox"]["vertices"]
-            start_x = min([v["x"] for v in vertices])
-            start_y = min([v["y"] for v in vertices])
-            width = max([v["x"] for v in vertices]) - start_x
-            height = max([v["y"] for v in vertices]) - start_y
-            texts = ""
-            for paragraph in block["paragraphs"]:
-                text = ""
-                for word in paragraph["words"]:
-                    word_text = ''.join([
-                        symbol["text"] for symbol in word["symbols"]
-                    ])
-                    text += word_text
-                texts += text
-            frames.append(([start_x, start_y, width, height], texts))
+    if "fullTextAnnotation" in response:
+        for page in response["fullTextAnnotation"]["pages"]:
+            for block in page["blocks"]:
+                vertices = block["boundingBox"]["vertices"]
+                if not check_legality(vertices):
+                    continue
+                start_x = min([v["x"] for v in vertices])
+                start_y = min([v["y"] for v in vertices])
+                width = max([v["x"] for v in vertices]) - start_x
+                height = max([v["y"] for v in vertices]) - start_y
+                texts = ""
+                for paragraph in block["paragraphs"]:
+                    text = ""
+                    for word in paragraph["words"]:
+                        word_text = ''.join([
+                            symbol["text"] for symbol in word["symbols"]
+                        ])
+                        text += word_text
+                    texts += text
+                frames.append(([start_x, start_y, width, height], texts))
     return frames
 
 
