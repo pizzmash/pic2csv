@@ -88,6 +88,7 @@ def draw_recall_matched_frames(img, frames, frames_ref):
         else:
             color = tuple([int(r) for r in np.random.randint(0, 256, 3)])
             rectangles(img, [frames[j], frames_ref[i]], color, thickness=3)
+    return len([i for i in matched if i is not None])
 
 
 def extract_frame_info(frame):
@@ -98,17 +99,20 @@ def extract_frame_info(frame):
 def main():
     pages = read_csv('pages.csv')
     pages_ref = read_csv('pages_ref.csv')
+    n_frames, n_rframes = None, None
+    n_matched = 0
     for page, rpage in zip(pages, pages_ref):
         frames = read_csv('frames.csv')
         frames_ref = read_csv('frames_ref.csv')
+        if n_frames is None:
+            n_frames = len(list(frames))
+            n_rframes = len(list(frames_ref))
         img = cv2.imread(page['source'], cv2.IMREAD_COLOR)
         frames = [extract_frame_info(frame) for frame in frames if frame['page_id'] == page['page_id']]
         rframes = [extract_frame_info(rframe) for rframe in frames_ref if rframe['page_id'] == page['page_id']]
         draw_frames(img, frames, rframes)
-        draw_recall_matched_frames(img, frames, rframes)
-        cv2.imshow('matched', img)
-        cv2.waitKey(0)
-
+        n_matched += draw_recall_matched_frames(img, frames, rframes)
+    print("{}, {}, {}".format(n_frames, n_rframes, n_matched))
 
 
 if __name__ == '__main__':
