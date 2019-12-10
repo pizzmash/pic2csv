@@ -120,13 +120,13 @@ def remove_inclusion(frames):
     return [frame for i, frame in enumerate(frames) if i not in remove_idx]
 
 
-def expand(frame, expansion):
+def expand(frame, x_expansion, y_expansion):
     return [
         [
-            max(0, frame[0][0]-expansion),
-            max(0, frame[0][1]-expansion),
-            frame[0][2]+expansion*2,
-            frame[0][3]+expansion*2
+            max(0, frame[0][0]-x_expansion),
+            max(0, frame[0][1]-y_expansion),
+            frame[0][2]+x_expansion*2,
+            frame[0][3]+y_expansion*2
         ],
         frame[1]
     ]
@@ -162,8 +162,8 @@ def sorted_by_distance(frames):
     return sorted(frames, key=lambda f: f[0][0]**2+f[0][1]**2, reverse=True)
 
 
-def combine_nearby(frames, expansion=3):
-    expanded = [expand(frame, expansion) for frame in frames]
+def combine_nearby(frames, x_expansion=3, y_expansion=0):
+    expanded = [expand(frame, x_expansion, y_expansion) for frame in frames]
     graph = create_graph(expanded)
     groups = divide_groups(graph)
 
