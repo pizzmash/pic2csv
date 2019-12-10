@@ -96,6 +96,12 @@ def extract_frame_info(frame):
     return [int(frame[name]) for name in info_names]
 
 
+def remove_mini(frames, min_w=0, min_h=0):
+    return [
+        frame for frame in frames if frame[2] >= min_w and frame[3] >= min_h
+    ]
+
+
 def remove_inclusion(frames):
     remove_idx = []
     for i, fi in enumerate(frames):
@@ -165,7 +171,8 @@ def combine_nearby(frames, expansion=3):
 
 
 def preprocess(frames):
-    result = remove_inclusion(frames)
+    result = remove_mini(frames, min_w=10, min_h=10)
+    result = remove_inclusion(result)
     result = combine_nearby(result)
     return result
 
@@ -186,9 +193,11 @@ def main():
         img = cv2.imread(page['source'], cv2.IMREAD_COLOR)
         frames = [extract_frame_info(frame) for frame in frames if frame['page_id'] == page['page_id']]
         rframes = [extract_frame_info(rframe) for rframe in frames_ref if rframe['page_id'] == page['page_id']]
+        # origin = frames
         frames = preprocess(frames)
         draw_frames(img, frames, rframes)
         n_matched += draw_recall_matched_frames(img, frames, rframes)
+        # rectangles(img, origin, (0, 0, 255))
         cv2.imshow('result', img)
         cv2.waitKey(0)
     print("{}, {}, {}".format(n_frames, n_rframes, n_matched))
