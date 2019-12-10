@@ -96,6 +96,80 @@ def extract_frame_info(frame):
     return [int(frame[name]) for name in info_names]
 
 
+def remove_inclusion(frames):
+    remove_idx = []
+    for i, fi in enumerate(frames):
+        if i in remove_idx:
+            continue
+        for j, fj in enumerate(frames):
+            if i != j:
+                overlap = culc_overlap(fi, fj)
+                if overlap is not None:
+                    if overlap == fi:
+                        remove_idx.append(i)
+                        break
+                    elif overlap == fj:
+                        remove_idx.append(j)
+    return [frame for i, frame in enumerate(frames) if i not in remove_idx]
+
+
+def expand(frame, expansion):
+    return [
+        max(0, frame[0]-expansion),
+        max(0, frame[1]-expansion),
+        frame[2]+expansion*2,
+        frame[3]+expansion*2
+    ]
+
+
+def create_graph(frames):
+    graph = [[False] * len(frames) for _ in range(len(frames))]
+    for i, fi in enumerate(frames):
+        for j, fj in enumerate(frames):
+            if i != j and culc_overlap(fi, fj) is not None:
+                graph[i][j] = True
+                graph[j][i] = True
+    return graph
+
+
+def divide_groups(graph):
+    def _divide_groups(idx, visited=None):
+        visited = [idx] if visited is None else visited
+        _groups = [idx]
+        dest = [j for j, v in enumerate(graph[idx]) if v and j not in visited]
+        for d in dest:
+            _groups += _divide_groups(d, visited+dest)
+        return _groups
+
+    groups = []
+    for i in range(len(graph)):
+        if i not in [v for g in groups for v in g]:
+            groups.append(_divide_groups(i))
+    return groups
+
+
+def combine_nearby(frames, expansion=3):
+    expanded = [expand(frame, expansion) for frame in frames]
+    graph = create_graph(expanded)
+    groups = divide_groups(graph)
+
+    result = []
+    for group in groups:
+        gframes = [frames[i] for i in group]
+        x = min([gf[0] for gf in gframes])
+        y = min([gf[1] for gf in gframes])
+        w = max([gf[0]+gf[2] for gf in gframes]) - x
+        h = max([gf[1]+gf[3] for gf in gframes]) - y
+        result.append([x, y, w, h])
+    return result
+
+
+def preprocess(frames):
+    result = remove_inclusion(frames)
+    result = combine_nearby(result)
+    return result
+
+
 def main():
     pages = read_csv('pages.csv')
     pages_ref = read_csv('pages_ref.csv')
@@ -104,14 +178,19 @@ def main():
     for page, rpage in zip(pages, pages_ref):
         frames = read_csv('frames.csv')
         frames_ref = read_csv('frames_ref.csv')
+        """
         if n_frames is None:
             n_frames = len(list(frames))
             n_rframes = len(list(frames_ref))
+        """
         img = cv2.imread(page['source'], cv2.IMREAD_COLOR)
         frames = [extract_frame_info(frame) for frame in frames if frame['page_id'] == page['page_id']]
         rframes = [extract_frame_info(rframe) for rframe in frames_ref if rframe['page_id'] == page['page_id']]
+        frames = preprocess(frames)
         draw_frames(img, frames, rframes)
         n_matched += draw_recall_matched_frames(img, frames, rframes)
+        cv2.imshow('result', img)
+        cv2.waitKey(0)
     print("{}, {}, {}".format(n_frames, n_rframes, n_matched))
 
 
