@@ -1,6 +1,8 @@
 import csv
 import cv2
 import numpy as np
+import Levenshtein
+import matplotlib.pyplot as plt
 
 
 def read_csv(path):
@@ -80,15 +82,13 @@ def draw_frames(img, frames, frames_ref):
     rectangles(img, frames_ref, (255, 0, 0))
 
 
-def draw_recall_matched_frames(img, frames, frames_ref):
-    matched = recall_matching(frames, frames_ref)
+def draw_recall_matched_frames(img, frames, frames_ref, matched):
     for i, j in enumerate(matched):
         if j is None:
             continue
         else:
             color = tuple([int(r) for r in np.random.randint(0, 256, 3)])
             rectangles(img, [frames[j], frames_ref[i]], color, thickness=3)
-    return len([i for i in matched if i is not None])
 
 
 def extract_frame_info(frame):
@@ -191,22 +191,65 @@ def preprocess(frames):
 def main():
     pages = read_csv('pages.csv')
     pages_ref = read_csv('pages_ref.csv')
-    for page, rpage in zip(pages, pages_ref):
+    n_frames = 0
+    n_processed_frames = 0
+    n_rframes = 0
+    n_matched_frames = 0
+    dists = []
+    texts = []
+    Fs = []
+    for page_id, (page, rpage) in enumerate(zip(pages, pages_ref)):
         frames = read_csv('frames.csv')
-        frames_ref = read_csv('frames_ref.csv')
-        img = cv2.imread(page['source'], cv2.IMREAD_COLOR)
+        rframes = read_csv('frames_ref.csv')
+        # img = cv2.imread(page['source'], cv2.IMREAD_COLOR)
         frames = [extract_frame_info(frame) for frame in frames if frame['page_id'] == page['page_id']]
-        rframes = [extract_frame_info(rframe) for rframe in frames_ref if rframe['page_id'] == page['page_id']]
-        origin = frames
+        rframes = [extract_frame_info(rframe) for rframe in rframes if rframe['page_id'] == page['page_id']]
+        # origin = frames
+        n_frames += len(frames)
+        n_rframes += len(rframes)
         frames = preprocess(frames)
-        draw_frames(img, frames, rframes)
-        draw_recall_matched_frames(img, frames, rframes)
-        for frame in frames:
-            print(frame[1])
-        print()
-        rectangles(img, origin, (0, 0, 255))
-        cv2.imshow('result', img)
-        cv2.waitKey(0)
+        n_processed_frames += len(frames)
+        # draw_frames(img, frames, rframes)
+        matched = recall_matching(frames, rframes)
+        # draw_recall_matched_frames(img, frames, rframes, matched)
+        for i, m in enumerate(matched):
+            str1 = frames[m][1].replace('\n', '') if m is not None else None
+            str2 = rframes[i][1].replace('\n', '')
+            if m is not None:
+                dist = Levenshtein.distance(str1, str2)
+                dist = float(dist) / max(len(str1), len(str2))
+                dists.append(dist)
+                texts.append((str1, str2))
+                Fs.append(culc_F(frames[m][0], rframes[i][0]))
+        n_matched_frames += sum([1 for m in matched if m is not None])
+        # print()
+        # rectangles(img, origin, (0, 0, 255))
+        # cv2.imshow('result', img)
+        # cv2.waitKey(0)
+        # cv2.imwrite('../resource/ginga_preprocess/ginga_{}.png'.format(str(page_id+1).zfill(3)), img)
+    n_matched_text = sum([1 for d in dists if d == 0])
+    print('frames: {}'.format(n_frames))
+    print('processed frames: {}'.format(n_processed_frames))
+    print('reference frames: {}'.format(n_rframes))
+    print('matched frames: {}'.format(n_matched_frames))
+    print('distance average: {}'.format(sum(dists)/len(dists)))
+    print('matched text: {} / {} = {}'.format(n_matched_text, n_matched_frames, n_matched_text/n_matched_frames))
+    print('average F: {}'.format(sum(Fs)/len(Fs)))
+    plt.hist(Fs)
+    plt.show()
+    plt.hist(dists)
+    plt.show()
+    """
+    import random
+    for v in range(10):
+        idx = [i for i, d in enumerate(dists) if v*0.1 < d and d <= (v+1)*0.1]
+        sample = random.sample(idx, 3)
+        for s in sorted(sample, key=lambda x: dists[x]):
+            print('systen: {}'.format(texts[s][0]))
+            print('reference: {}'.format(texts[s][1]))
+            print('distance: {}'.format(dists[s]))
+            print()
+    """
 
 
 if __name__ == '__main__':
