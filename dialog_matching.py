@@ -159,7 +159,7 @@ def divide_groups(graph):
 
 
 def sorted_by_distance(frames):
-    return sorted(frames, key=lambda f: f[0][0]**2+f[0][1]**2, reverse=True)
+    return sorted(frames, key=lambda f: f[0][0], reverse=True)
 
 
 def combine_nearby(frames, x_expansion=3, y_expansion=0):
