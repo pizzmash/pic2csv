@@ -54,7 +54,7 @@ def recognize_source(source, logger):
     if image is None:
         return None
     else:
-        r = recognize_captcha(settings.AP, [image])
+        r = recognize_captcha(settings.AP, [image], logger)
         if r is None:
             return None
         else:
