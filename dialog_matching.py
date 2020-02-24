@@ -201,7 +201,7 @@ def main():
     for page_id, (page, rpage) in enumerate(zip(pages, pages_ref)):
         frames = read_csv('frames.csv')
         rframes = read_csv('frames_ref.csv')
-        # img = cv2.imread(page['source'], cv2.IMREAD_COLOR)
+        img = cv2.imread(page['source'], cv2.IMREAD_COLOR)
         frames = [extract_frame_info(frame) for frame in frames if frame['page_id'] == page['page_id']]
         rframes = [extract_frame_info(rframe) for rframe in rframes if rframe['page_id'] == page['page_id']]
         # origin = frames
@@ -214,7 +214,15 @@ def main():
         # draw_recall_matched_frames(img, frames, rframes, matched)
         for i, m in enumerate(matched):
             str1 = frames[m][1].replace('\n', '') if m is not None else None
+            metachr = ['、', '。', ']', ')', '）', '」', '|', '\\', '/', '一']
+            if m is not None:
+                for ch in metachr:
+                    str1 = str1.replace(ch, '')
+                str1 = str1.replace('?', '？')
+                str1 = str1.replace('!', '！')
             str2 = rframes[i][1].replace('\n', '')
+            str2 = str2.replace('?', '？')
+            str2 = str2.replace('!', '!')
             if m is not None:
                 dist = Levenshtein.distance(str1, str2)
                 dist = float(dist) / max(len(str1), len(str2))
@@ -235,21 +243,34 @@ def main():
     print('distance average: {}'.format(sum(dists)/len(dists)))
     print('matched text: {} / {} = {}'.format(n_matched_text, n_matched_frames, n_matched_text/n_matched_frames))
     print('average F: {}'.format(sum(Fs)/len(Fs)))
-    plt.hist(Fs)
-    plt.show()
-    plt.hist(dists)
-    plt.show()
+    # plt.hist(Fs)
+    # plt.show()
+    # plt.hist(dists)
+    # plt.show()
+
     """
     import random
     for v in range(10):
         idx = [i for i, d in enumerate(dists) if v*0.1 < d and d <= (v+1)*0.1]
         sample = random.sample(idx, 3)
         for s in sorted(sample, key=lambda x: dists[x]):
-            print('systen: {}'.format(texts[s][0]))
+            print('system: {}'.format(texts[s][0]))
             print('reference: {}'.format(texts[s][1]))
             print('distance: {}'.format(dists[s]))
             print()
     """
+
+    import random
+    idx = [i for i, d in enumerate(dists) if 0 < d and d <= 0.1]
+    # sample = random.sample(idx, 30)
+    for s in sorted(idx, key=lambda x: dists[x]):
+        print('system: {}'.format(texts[s][0]))
+        print('reference: {}'.format(texts[s][1]))
+        print('distance: {}'.format(dists[s]))
+        print()
+
+
+
 
 
 if __name__ == '__main__':
