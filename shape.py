@@ -3,6 +3,7 @@ import csv
 from logging import getLogger, StreamHandler, INFO
 
 from processer import CSVProcesser
+import settings
 
 
 def main():
@@ -40,7 +41,7 @@ def main():
     prcs.read(args.input_pages_csv, args.input_frames_csv)
     logger.info('count of frames: %d' % prcs.n_frames())
     logger.info('removing mini frames...')
-    prcs = prcs.remove_mini_frames()
+    prcs = prcs.remove_mini_frames(settings.MIN_W, settings.MIN_H)
     logger.info('done!')
     logger.info('count of frames: %d' % prcs.n_frames())
     logger.info('removing inclusion frames...')
@@ -48,11 +49,11 @@ def main():
     logger.info('done!')
     logger.info('count of frames: %d' % prcs.n_frames())
     logger.info('combining nearby frames...')
-    prcs = prcs.combine_nearby_frames()
+    prcs = prcs.combine_nearby_frames(settings.EXP_X, settings.EXP_Y)
     logger.info('done!')
     logger.info('count of frames: %d' % prcs.n_frames())
     logger.info('removing noise charactors')
-    prcs = prcs.remove_noise_charactors()
+    prcs = prcs.remove_noise_charactors(list(settings.NOISE_CHARS))
     logger.info('done!')
     prcs.write(args.output_pages_csv, args.output_frames_csv)
 
