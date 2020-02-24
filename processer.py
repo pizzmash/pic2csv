@@ -88,6 +88,9 @@ class PageBuffer:
         self.page_id = page_id
         self.frames = frames
 
+    def add_frame(frame):
+        self.frames.append(frame)
+
     def remove_mini_frames(self, min_w, min_h):
         self.frames = [
             frame for frame in self.frames if frame.rectangle.width >= min_w and frame.rectangle.height >= min_h
@@ -210,6 +213,9 @@ class CSVProcesser:
                     page_id=key[1],
                     frames=frames
                 ))
+
+    def add_page(self, page):
+        self.pages.append(page)
 
     def remove_mini_frames(self, min_w=15, min_h=15):
         buffer = copy.deepcopy(self)

@@ -3,6 +3,7 @@ import base64
 import json
 import requests
 import cv2
+from processer import FrameBuffer, Rectangle
 
 
 def recognize_captcha(api_key, images, logger):
@@ -67,7 +68,15 @@ def parse_response(response):
                         ])
                         text += word_text
                     texts += text
-                frames.append(([start_x, start_y, width, height], texts))
+                frames.append(FrameBuffer(
+                    rectangle=Rectangle(
+                        start_x=start_x,
+                        start_y=start_y,
+                        width=width,
+                        height=height
+                    ),
+                    text=texts
+                ))
     return frames
 
 

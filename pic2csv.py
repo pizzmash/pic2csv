@@ -1,8 +1,8 @@
 # coding: UTF-8
 import cv2
 from recognize import recognize_captcha, parse_response
+from processer import PageBuffer, CSVProcesser
 import json
-import csv
 import argparse
 from urllib import parse
 import tempfile
@@ -63,56 +63,19 @@ def recognize_source(source, logger):
             return frames
 
 
-def pack_page_info(source, page_id, frames):
-    page_info = {}
-    page_info['source'] = source
-    page_info['page_id'] = page_id
-    page_info['frames'] = len(frames) if frames is not None else None
-    return page_info
-
-
-def pack_frame_info(source, page_id, frame_id, frame):
-    frame_info = {}
-    frame_info['source'] = source
-    frame_info['page_id'] = page_id
-    frame_info['frame_id'] = frame_id
-    frame_info['startX'] = frame[0][0]
-    frame_info['startY'] = frame[0][1]
-    frame_info['width'] = frame[0][2]
-    frame_info['height'] = frame[0][3]
-    frame_info['text'] = frame[1]
-    return frame_info
-
-
-def pack_error_info(source, page_id):
-    return {'source': source, 'page_id': page_id}
-
-
-def make_csv(sources, logger):
-    page_fields = ['source', 'page_id', 'frames']
-    frame_fields = ['source', 'page_id', 'frame_id', 'startX', 'startY', 'width', 'height', 'text']
-    pages_fp = open('pages.csv', 'w', newline='')
-    frames_fp = open('frames.csv', 'w', newline='')
-    pages_csv = csv.DictWriter(pages_fp, fieldnames=page_fields)
-    pages_csv.writeheader()
-    frames_csv = csv.DictWriter(frames_fp, fieldnames=frame_fields)
-    frames_csv.writeheader()
-
+def make_csv(sources, output_pages_csv, output_frames_csv, logger):
+    prcs = CSVProcesser()
     for i, source in enumerate(sources):
         logger.info('\n({}/{}) FILE: {}'.format(i+1, len(sources), source))
-
         frames = recognize_source(source, logger)
-
-        page_info = pack_page_info(source, i, frames)
-        pages_csv.writerow(page_info)
-
-        if frames is not None:
-            for j, frame in enumerate(frames):
-                frame_info = pack_frame_info(source, i, j, frame)
-                frames_csv.writerow(frame_info)
-
-    pages_fp.close()
-    frames_fp.close()
+        if frames is None:
+            frames = []
+        prcs.add_page(PageBuffer(
+            source=source,
+            page_id=i,
+            frames=frames
+        ))
+    prcs.write(output_pages_csv, output_frames_csv)
 
 
 def main():
@@ -129,6 +92,16 @@ def main():
         default=[],
         help='image directories'
     )
+    parser.add_argument(
+        '-p', '--pages',
+        default='pages.csv',
+        help='output pages CSV file'
+    )
+    parser.add_argument(
+        '-f', '--frames',
+        default='frames.csv',
+        help='output frames CSV file'
+    )
     args = parser.parse_args()
 
     logger = getLogger(__name__)
@@ -142,7 +115,7 @@ def main():
     logger.propagate = False
 
     sources = args.images + search_images(args.directories)
-    make_csv(sources, logger)
+    make_csv(sources, args.pages, args.frames, logger)
 
 
 if __name__ == "__main__":
