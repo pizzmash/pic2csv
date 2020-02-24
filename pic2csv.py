@@ -11,6 +11,7 @@ import pathlib
 import imghdr
 import settings
 import os
+from logging import getLogger, FileHandler, StreamHandler, INFO
 
 
 def search_images(directories):
@@ -22,13 +23,13 @@ def search_images(directories):
     return images
 
 
-def read_source(source):
+def read_source(source, logger):
     # Check if the file on the web
     if len(parse.urlparse(source).scheme) > 0:
         try:
             res = requests.get(source)
         except requests.exceptions.RequestException as e:
-            print('ERROR: {}'.format(e))
+            logger.error('ERROR: {}'.format(e))
             return None
         # Save to a temporary file
         with tempfile.NamedTemporaryFile(dir='./') as f:
@@ -37,19 +38,19 @@ def read_source(source):
             image = cv2.imread(f.name, cv2.IMREAD_COLOR)
     else:
         if not os.path.exists(source):
-            print('ERROR: file does not exist')
+            logger.error('ERROR: file does not exist')
             return None
         else:
             image = cv2.imread(source, cv2.IMREAD_COLOR)
     if image is None:
-        print('ERROR: failed to read image')
+        logger.error('ERROR: failed to read image')
         return None
     else:
         return image
 
 
-def recognize_source(source):
-    image = read_source(source)
+def recognize_source(source, logger):
+    image = read_source(source, logger)
     if image is None:
         return None
     else:
@@ -87,24 +88,20 @@ def pack_error_info(source, page_id):
     return {'source': source, 'page_id': page_id}
 
 
-def make_csv(sources):
+def make_csv(sources, logger):
     page_fields = ['source', 'page_id', 'frames']
     frame_fields = ['source', 'page_id', 'frame_id', 'startX', 'startY', 'width', 'height', 'text']
-    error_fields = ['source', 'page_id']
     pages_fp = open('pages.csv', 'w', newline='')
     frames_fp = open('frames.csv', 'w', newline='')
-    errors_fp = open('errors.csv', 'w', newline='')
     pages_csv = csv.DictWriter(pages_fp, fieldnames=page_fields)
     pages_csv.writeheader()
     frames_csv = csv.DictWriter(frames_fp, fieldnames=frame_fields)
     frames_csv.writeheader()
-    errors_csv = csv.DictWriter(errors_fp, fieldnames=error_fields)
-    errors_csv.writeheader()
 
     for i, source in enumerate(sources):
-        print('({}/{}) FILE: {}'.format(i+1, len(sources), source))
+        logger.info('\n({}/{}) FILE: {}'.format(i+1, len(sources), source))
 
-        frames = recognize_source(source)
+        frames = recognize_source(source, logger)
 
         page_info = pack_page_info(source, i, frames)
         pages_csv.writerow(page_info)
@@ -113,15 +110,9 @@ def make_csv(sources):
             for j, frame in enumerate(frames):
                 frame_info = pack_frame_info(source, i, j, frame)
                 frames_csv.writerow(frame_info)
-        else:
-            error_info = pack_error_info(source, i)
-            errors_csv.writerow(error_info)
-
-        print()
 
     pages_fp.close()
     frames_fp.close()
-    errors_fp.close()
 
 
 def main():
@@ -140,8 +131,18 @@ def main():
     )
     args = parser.parse_args()
 
+    logger = getLogger(__name__)
+    sh = StreamHandler()
+    sh.setLevel(INFO)
+    fh = FileHandler('result.log')
+    fh.setLevel(INFO)
+    logger.setLevel(INFO)
+    logger.addHandler(sh)
+    logger.addHandler(fh)
+    logger.propagate = False
+
     sources = args.images + search_images(args.directories)
-    make_csv(sources)
+    make_csv(sources, logger)
 
 
 if __name__ == "__main__":

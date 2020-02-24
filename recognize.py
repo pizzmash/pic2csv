@@ -5,7 +5,7 @@ import requests
 import cv2
 
 
-def recognize_captcha(api_key, images):
+def recognize_captcha(api_key, images, logger):
     str_url = "https://vision.googleapis.com/v1/images:annotate"
     str_headers = {'Content-Type': 'application/json'}
 
@@ -32,7 +32,7 @@ def recognize_captcha(api_key, images):
     try:
         obj_response.raise_for_status()
     except Exception as e:
-        print('error: {}'.format(e))
+        logger.error('ERROR: {}'.format(e))
         return None
     return obj_response.text
 
