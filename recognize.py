@@ -3,7 +3,7 @@ import base64
 import json
 import requests
 import cv2
-from processer import FrameBuffer, Rectangle
+from processor import FrameBuffer, Rectangle
 
 
 def recognize_captcha(api_key, images, logger):

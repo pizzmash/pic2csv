@@ -182,7 +182,7 @@ class FrameBuffer:
         }
 
 
-class CSVProcesser:
+class CSVProcessor:
     def __init__(self):
         self.pages = []
 

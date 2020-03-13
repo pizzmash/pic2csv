@@ -2,7 +2,7 @@ import argparse
 import csv
 from logging import getLogger, StreamHandler, INFO
 
-from processer import CSVProcesser
+from processor import CSVProcessor
 import settings
 
 
@@ -37,7 +37,7 @@ def main():
     logger.addHandler(handler)
     logger.propagate = False
 
-    prcs = CSVProcesser()
+    prcs = CSVProcessor()
     prcs.read(args.input_pages_csv, args.input_frames_csv)
     logger.info('count of frames: %d' % prcs.n_frames())
     logger.info('removing mini frames...')

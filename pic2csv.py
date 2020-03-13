@@ -1,7 +1,7 @@
 # coding: UTF-8
 import cv2
 from recognize import recognize_captcha, parse_response
-from processer import PageBuffer, CSVProcesser
+from processor import PageBuffer, CSVProcessor
 import json
 import argparse
 from urllib import parse
@@ -17,7 +17,7 @@ from logging import getLogger, FileHandler, StreamHandler, INFO
 def search_images(directories):
     images = []
     for d in directories:
-        p_temp = pathlib.Path(d)  # you die if d does'nt exist
+        p_temp = pathlib.Path(d)
         imgs = [str(p) for p in p_temp.iterdir() if p.is_file() and imghdr.what(str(p)) is not None]
         images += sorted(imgs)
     return images
@@ -64,7 +64,7 @@ def recognize_source(source, logger):
 
 
 def make_csv(sources, output_pages_csv, output_frames_csv, logger):
-    prcs = CSVProcesser()
+    prcs = CSVProcessor()
     for i, source in enumerate(sources):
         logger.info('\n({}/{}) FILE: {}'.format(i+1, len(sources), source))
         frames = recognize_source(source, logger)
