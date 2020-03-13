@@ -17,7 +17,7 @@ $ pip install python-dotenv
 ### テキスト領域認識
 `.env`にAPIキーを記載する必要がある
 
-#####.env
+##### .env
 ```
 API_KEY="your API key"
 ```
