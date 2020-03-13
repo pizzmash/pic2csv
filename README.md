@@ -36,7 +36,7 @@ $ python pic2csv.py -d directory1 …
 $ python pic2csv.py -d directory -p mypages.csv -f myframes.csv
 ```
 
-####　出力ファイル例
+#### 出力ファイル例
 ##### pages.csv
 ```
 source,page_id,frames
